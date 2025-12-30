@@ -6,7 +6,7 @@ def test_ingestion():
     
     # Use a short video for testing (approx 1 min) to save time
     # This is a random copyright-free test video
-    TEST_URL = "https://www.youtube.com/watch?v=zBjJUV-lzHo" 
+    TEST_URL = "https://www.youtube.com/watch?v=r6zFZQm0hcc" 
     
     db = SessionLocal()
     ingestor = IngestionService(db)
