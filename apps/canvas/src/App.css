@@ -1,0 +1,41 @@
+@import "tailwindcss";
+
+@theme {
+  /* We define our Titanium Palette here */
+  --color-dark: #0f0f11;
+  --color-panel: #18181b;
+  --color-accent: #3b82f6;
+}
+
+/* Global Styles */
+body {
+  background-color: var(--color-dark);
+  color: white;
+  overflow: hidden;
+}
+
+/* React Flow Dark Mode Overrides */
+.react-flow__node {
+  border-radius: 12px;
+}
+
+.react-flow__handle {
+  width: 10px;
+  height: 10px;
+  background: var(--color-accent);
+}
+
+.react-flow__controls {
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+  border: 1px solid #333;
+}
+
+.react-flow__controls-button {
+  background: var(--color-panel) !important;
+  border-bottom: 1px solid #333 !important;
+  fill: white !important;
+}
+
+.react-flow__controls-button:hover {
+  background: #333 !important;
+}

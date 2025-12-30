@@ -3,6 +3,7 @@ import os
 import subprocess
 from core.db import VideoProject
 from vision.camera_operator import VirtualCameraman
+from services.subtitles import generate_karaoke_subtitles
 
 
 class RenderService:
@@ -106,6 +107,16 @@ class RenderService:
         out.release()
         print("\n✅ Video Track Complete.")
 
+        print("📝 Generating Subtitles...")
+        subtitle_path = os.path.join(self.output_dir, "subtitles.ass")
+        # Ensure we pass the absolute path for FFmpeg
+        abs_subtitle_path = os.path.abspath(subtitle_path).replace("\\", "/")
+        # Note: FFmpeg on Windows is picky about paths in filtergraphs. Forward slashes help.
+
+        generate_karaoke_subtitles(
+            project.transcript_json, start_time, end_time, subtitle_path
+        )
+
         # 4. AUDIO PROCESSING (FFmpeg)
         print("🔊 Extracting Audio...")
         # REMOVED: stdout=subprocess.DEVNULL (So we can see errors)
@@ -137,6 +148,7 @@ class RenderService:
 
         # 5. MERGE (Muxing)
         print("✨ Merging Final Cut...")
+        escaped_sub_path = abs_subtitle_path.replace(":", "\\:")
         try:
             subprocess.run(
                 [
@@ -146,10 +158,14 @@ class RenderService:
                     temp_video_path,
                     "-i",
                     temp_audio_path,
+                    "-vf",
+                    f"subtitles='{escaped_sub_path}'",  # <--- The Magic Line
                     "-c:v",
-                    "copy",
+                    "libx264",  # Must re-encode video to burn text
+                    "-preset",
+                    "fast",
                     "-c:a",
-                    "copy",
+                    "aac",
                     final_output_path,
                 ],
                 check=True,
@@ -157,7 +173,7 @@ class RenderService:
                 stdout=subprocess.PIPE,
             )
         except subprocess.CalledProcessError as e:
-            print(f"\n❌ FFmpeg Merge Error:\n{e.stderr.decode()}")
+            print(f"\n❌ FFmpeg Subtitle Merge Error:\n{e.stderr.decode()}")
             raise e
 
         # Cleanup
