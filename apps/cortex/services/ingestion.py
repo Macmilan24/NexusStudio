@@ -52,22 +52,37 @@ class IngestionService:
 
     def _download(self, url: str):
         ydl_opts = {
-            'format': 'bestvideo[height<=720]+bestaudio/best[height<=720]', # 720p is enough for AI analysis, saves bandwidth
+            'format': 'bestvideo[height<=720]+bestaudio/best[height<=720]',
             'outtmpl': os.path.join(self.data_dir, '%(id)s.%(ext)s'),
             'postprocessors': [{
                 'key': 'FFmpegExtractAudio',
-                'preferredcodec': 'wav', # WAV is faster for Whisper than MP3
+                'preferredcodec': 'wav',
             }],
-            'keepvideo': True, 
+            'keepvideo': True,
         }
         
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(url, download=True)
-            video_path = os.path.join(self.data_dir, f"{info['id']}.mp4")
-            audio_path = os.path.join(self.data_dir, f"{info['id']}.wav")
-            # If mp4 doesn't exist (merged), check mkv or webm
-            if not os.path.exists(video_path):
-                video_path = os.path.join(self.data_dir, f"{info['id']}.mkv")
+            video_id = info['id']
+            
+            # FIXED: Logic to find the actual file extension
+            possible_extensions = ['.mp4', '.mkv', '.webm']
+            video_path = None
+            
+            for ext in possible_extensions:
+                path_check = os.path.join(self.data_dir, f"{video_id}{ext}")
+                if os.path.exists(path_check):
+                    video_path = path_check
+                    break
+            
+            if not video_path:
+                # Last resort: check if yt-dlp merged it into the requested filename in info
+                if os.path.exists(info.get('_filename', '')):
+                    video_path = info['_filename']
+                else:
+                    raise FileNotFoundError(f"Could not locate video file for ID: {video_id}")
+
+            audio_path = os.path.join(self.data_dir, f"{video_id}.wav")
                 
         return video_path, audio_path, info
 
